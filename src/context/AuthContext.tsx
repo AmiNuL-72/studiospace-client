@@ -48,6 +48,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await axiosSecure.post("/auth/login", { email, password });
     if (res.data?.success && res.data?.data) {
       const userData = res.data.data;
+      if (userData.token && typeof window !== "undefined") {
+        localStorage.setItem("token", userData.token);
+      }
       setUser({
         id: userData._id || userData.id,
         name: userData.name,
@@ -80,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loginWithGoogle = async () => {
-
     const defaultGoogleUser = {
       name: "Google Creator",
       email: "creator.google@studiospace.io",
@@ -90,6 +92,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await axiosSecure.post("/auth/google-login", defaultGoogleUser);
     if (res.data?.success && res.data?.data) {
       const userData = res.data.data;
+      if (userData.token && typeof window !== "undefined") {
+        localStorage.setItem("token", userData.token);
+      }
       setUser({
         id: userData._id || userData.id,
         name: userData.name,
@@ -107,6 +112,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+      }
       setUser(null);
     }
   };

@@ -1,11 +1,23 @@
 import axios from "axios";
 
 const axiosSecure = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api",
+  baseURL:
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://studiospace-server-as8.vercel.app/api",
   headers: {
     "Content-Type": "application/json",
   },
   withCredentials: true,
+});
+
+axiosSecure.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
 });
 
 axiosSecure.interceptors.response.use(
