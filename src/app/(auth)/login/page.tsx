@@ -1,20 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { FiMail, FiLock } from "react-icons/fi";
+import { FiMail, FiLock, FiKey } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithGoogle } = useAuth();
+  const { user, login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      router.push("/");
+    }
+  }, [user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,24 +42,50 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
+      setIsSubmitting(true);
       await loginWithGoogle();
-      toast.success("Authenticated with Google successfully!");
+      toast.success("Signed in with Google successfully!");
       router.push("/");
-    } catch {
-      toast.error("Google sign-in could not be completed.");
+    } catch (err: unknown) {
+      const msg = (err as Error)?.message || "Google sign-in could not be completed.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const fillExaminerCredentials = () => {
+    setEmail("test@test.com");
+    setPassword("Test1234");
+    toast.info("Examiner test credentials loaded!");
   };
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-8 shadow-xl">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
             Welcome to StudioSpace
           </h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             Sign in to manage your spaces and production bookings
           </p>
+        </div>
+
+        <div className="mb-6 p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50 flex items-center justify-between gap-3">
+          <div className="text-xs">
+            <p className="font-semibold text-indigo-950 dark:text-indigo-200">Examiner Test Credentials</p>
+            <p className="text-neutral-600 dark:text-neutral-400">test@test.com • Test1234</p>
+          </div>
+          <button
+            type="button"
+            onClick={fillExaminerCredentials}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition shrink-0"
+          >
+            <FiKey className="w-3.5 h-3.5" />
+            <span>Auto Fill</span>
+          </button>
         </div>
 
         {error && (
@@ -124,7 +156,8 @@ export default function LoginPage() {
         <button
           onClick={handleGoogleLogin}
           type="button"
-          className="w-full flex items-center justify-center gap-3 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-800 dark:text-neutral-200 transition"
+          disabled={isSubmitting}
+          className="w-full flex items-center justify-center gap-3 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-800 dark:text-neutral-200 transition disabled:opacity-50"
         >
           <FcGoogle className="w-5 h-5" />
           <span>Continue with Google</span>

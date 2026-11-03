@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -10,13 +10,19 @@ import { FcGoogle } from "react-icons/fc";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, loginWithGoogle } = useAuth();
+  const { user, register, loginWithGoogle } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [photoURL, setPhotoURL] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      router.push("/");
+    }
+  }, [user, router]);
 
   const hasUppercase = /[A-Z]/.test(password);
   const hasLowercase = /[a-z]/.test(password);
@@ -50,11 +56,16 @@ export default function RegisterPage() {
 
   const handleGoogleRegister = async () => {
     try {
+      setIsSubmitting(true);
       await loginWithGoogle();
       toast.success("Authenticated with Google successfully!");
       router.push("/");
-    } catch {
-      toast.error("Google authentication failed.");
+    } catch (err: unknown) {
+      const msg = (err as Error)?.message || "Google sign-in could not be completed.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -189,7 +200,8 @@ export default function RegisterPage() {
         <button
           onClick={handleGoogleRegister}
           type="button"
-          className="w-full flex items-center justify-center gap-3 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-800 dark:text-neutral-200 transition"
+          disabled={isSubmitting}
+          className="w-full flex items-center justify-center gap-3 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-sm font-medium text-neutral-800 dark:text-neutral-200 transition disabled:opacity-50"
         >
           <FcGoogle className="w-5 h-5" />
           <span>Continue with Google</span>
