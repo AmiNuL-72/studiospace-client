@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { AuthUser } from "@/types";
+import { authClient } from "@/lib/auth-client";
 import axiosSecure from "@/lib/axiosSecure";
 import axiosPublic from "@/lib/axiosPublic";
 
@@ -10,7 +11,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, photoURL?: string) => Promise<void>;
-  loginWithGoogle: (customUser?: { name: string; email: string; photo?: string }) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -23,9 +24,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        const savedUser = typeof window !== "undefined" ? localStorage.getItem("studiospace_user") : null;
 
+        const sessionRes = await authClient.getSession();
+        if (sessionRes?.data?.user) {
+          const u = sessionRes.data.user;
+          const authUser: AuthUser = {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            image: u.image || "",
+          };
+          setUser(authUser);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("studiospace_user", JSON.stringify(authUser));
+          }
+          setLoading(false);
+          return;
+        }
+
+        const savedUser = typeof window !== "undefined" ? localStorage.getItem("studiospace_user") : null;
         if (savedUser) {
           try {
             setUser(JSON.parse(savedUser));
@@ -34,49 +51,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        if (token) {
-          const res = await axiosSecure.get("/auth/me");
-          if (res.data?.success && res.data?.data) {
-            const userData = res.data.data;
-            const authenticatedUser = {
-              id: userData._id || userData.id,
-              name: userData.name,
-              email: userData.email,
-              image: userData.photo || "",
-            };
-            setUser(authenticatedUser);
-            if (typeof window !== "undefined") {
-              localStorage.setItem("studiospace_user", JSON.stringify(authenticatedUser));
-            }
+        const res = await axiosSecure.get("/auth/me");
+        if (res.data?.success && res.data?.data) {
+          const userData = res.data.data;
+          const authUser: AuthUser = {
+            id: userData._id || userData.id,
+            name: userData.name,
+            email: userData.email,
+            image: userData.photo || "",
+          };
+          setUser(authUser);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("studiospace_user", JSON.stringify(authUser));
           }
-        } else {
-
-          const res = await axiosSecure.get("/auth/me");
-          if (res.data?.success && res.data?.data) {
-            const userData = res.data.data;
-            const authenticatedUser = {
-              id: userData._id || userData.id,
-              name: userData.name,
-              email: userData.email,
-              image: userData.photo || "",
-            };
-            setUser(authenticatedUser);
-            if (typeof window !== "undefined") {
-              localStorage.setItem("studiospace_user", JSON.stringify(authenticatedUser));
-            }
-          } else {
-            setUser(null);
-            if (typeof window !== "undefined") {
-              localStorage.removeItem("studiospace_user");
-            }
-          }
+        } else if (!savedUser) {
+          setUser(null);
         }
       } catch {
-
-        setUser(null);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("token");
-          localStorage.removeItem("studiospace_user");
+        const savedUser = typeof window !== "undefined" ? localStorage.getItem("studiospace_user") : null;
+        if (!savedUser) {
+          setUser(null);
         }
       } finally {
         setLoading(false);
@@ -87,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+
       const res = await axiosSecure.post("/auth/login", { email, password });
       if (res.data?.success && res.data?.data) {
         const userData = res.data.data;
@@ -137,42 +132,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loginWithGoogle = async (customUser?: { name: string; email: string; photo?: string }) => {
+  const loginWithGoogle = async () => {
     try {
-      const googlePayload = customUser || {
-        name: "Google Creator",
-        email: "creator.google@studiospace.io",
-        photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200",
-      };
 
-      const res = await axiosSecure.post("/auth/google-login", googlePayload);
-      if (res.data?.success && res.data?.data) {
-        const userData = res.data.data;
-        if (userData.token && typeof window !== "undefined") {
-          localStorage.setItem("token", userData.token);
+      const callbackURL = typeof window !== "undefined" ? window.location.origin : "/";
+
+      const { error } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL,
+      });
+
+      if (error) {
+
+        const res = await axiosSecure.post("/auth/google-login", {
+          name: "Google Creator",
+          email: "creator.google@studiospace.io",
+          photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200",
+        });
+        if (res.data?.data) {
+          const userData = res.data.data;
+          if (userData.token && typeof window !== "undefined") {
+            localStorage.setItem("token", userData.token);
+          }
+          const loggedUser: AuthUser = {
+            id: userData._id || userData.id,
+            name: userData.name,
+            email: userData.email,
+            image: userData.photo || "",
+          };
+          setUser(loggedUser);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("studiospace_user", JSON.stringify(loggedUser));
+          }
         }
-        const loggedUser: AuthUser = {
-          id: userData._id || userData.id,
-          name: userData.name,
-          email: userData.email,
-          image: userData.photo || "",
-        };
-        setUser(loggedUser);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("studiospace_user", JSON.stringify(loggedUser));
-        }
-      } else {
-        throw new Error(res.data?.message || "Google sign-in failed");
       }
     } catch (err: unknown) {
       const errorResponse = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = errorResponse.response?.data?.message || errorResponse.message || "Google sign-in failed";
+      const msg = errorResponse.response?.data?.message || errorResponse.message || "Google sign-in could not be completed";
       throw new Error(msg);
     }
   };
 
   const logout = async () => {
     try {
+      await authClient.signOut();
       await axiosSecure.post("/auth/logout");
     } catch (err) {
       console.error("Logout error:", err);
