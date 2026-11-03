@@ -22,10 +22,16 @@ export default function MyListingsPage() {
     if (!user?.email) return;
     try {
       setLoading(true);
-      const res = await axiosSecure.get(`/my-studios?email=${user.email}`);
+      let res;
+      try {
+        res = await axiosSecure.get(`/my-studios?email=${encodeURIComponent(user.email)}`);
+      } catch {
+        res = await axiosSecure.get(`/studios/owner/${encodeURIComponent(user.email)}`);
+      }
       setStudios(res.data?.studios || res.data?.data || (Array.isArray(res.data) ? res.data : []));
     } catch (err) {
       console.error("Failed to load my studios", err);
+      toast.error("Could not load your listings. Please verify server connection.");
     } finally {
       setLoading(false);
     }
@@ -94,7 +100,7 @@ export default function MyListingsPage() {
                       <div className="w-12 h-12 rounded-lg bg-neutral-200 dark:bg-neutral-800 overflow-hidden shrink-0">
 
                         <img
-                          src={studio.primaryImage || studio.images?.[0] || ""}
+                          src={studio.primaryImage || studio.images?.[0] || studio.image || ""}
                           alt={studio.title}
                           className="w-full h-full object-cover"
                         />

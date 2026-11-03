@@ -44,11 +44,16 @@ export default function MyBookingsPage() {
     if (!user?.email) return;
     try {
       setLoading(true);
-      const res = await axiosSecure.get(`/my-bookings?email=${user.email}`);
+      let res;
+      try {
+        res = await axiosSecure.get(`/my-bookings?email=${encodeURIComponent(user.email)}`);
+      } catch {
+        res = await axiosSecure.get(`/bookings/user/${encodeURIComponent(user.email)}`);
+      }
       setBookings(res.data?.bookings || res.data?.data || (Array.isArray(res.data) ? res.data : []));
     } catch (err) {
       console.error("Failed to load bookings:", err);
-      toast.error("Could not load your bookings.");
+      toast.error("Could not load your bookings. Please verify server connection.");
     } finally {
       setLoading(false);
     }

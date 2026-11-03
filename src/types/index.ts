@@ -30,6 +30,7 @@ export interface Studio {
   securityDeposit: number;
   maxCapacity: number;
   location: string;
+  image?: string;
   images: string[];
   primaryImage: string;
   amenities: string[];
@@ -39,6 +40,7 @@ export interface Studio {
   reviews?: StudioReview[];
   host: HostInfo;
   ownerEmail: string;
+  ownerName?: string;
   createdAt?: string;
   updatedAt?: string;
 }
