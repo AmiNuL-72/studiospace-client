@@ -113,6 +113,9 @@ export default function MyBookingsPage() {
                   <img
                     src={booking.studioImage || "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=200"}
                     alt={booking.studioTitle}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=200";
+                    }}
                     className="w-full h-full object-cover"
                   />
                 </div>

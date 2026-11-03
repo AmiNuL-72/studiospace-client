@@ -74,8 +74,9 @@ export default function StudioForm({
       const url = await uploadToImgBB(file);
       setPrimaryImage(url);
       toast.success("Image uploaded successfully!");
-    } catch {
-      toast.error("Image upload failed. You can paste a direct URL instead.");
+    } catch (err: unknown) {
+      const msg = (err as Error)?.message || "Image upload failed. You can paste a direct URL instead.";
+      toast.error(msg);
     } finally {
       setIsUploading(false);
     }

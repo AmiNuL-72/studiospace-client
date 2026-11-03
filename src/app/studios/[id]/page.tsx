@@ -141,8 +141,11 @@ export default function StudioDetailsPage() {
       <div className="relative w-full h-64 sm:h-80 lg:h-[420px] rounded-3xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-8">
 
         <img
-          src={studio.primaryImage || studio.images?.[0] || "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1920"}
+          src={studio.primaryImage || studio.images?.[0] || studio.image || "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1920"}
           alt={studio.title}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1920";
+          }}
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 left-4">

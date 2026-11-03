@@ -11,12 +11,17 @@ interface StudioCardProps {
   isWishlisted?: boolean;
 }
 
+const DEFAULT_STUDIO_IMG = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=800";
+
 export default function StudioCard({
   studio,
   onToggleWishlist,
   isWishlisted = false,
 }: StudioCardProps) {
   const [wishlist, setWishlist] = useState(isWishlisted);
+
+  const rawImg = studio.primaryImage || studio.images?.[0] || studio.image || DEFAULT_STUDIO_IMG;
+  const [imgSrc, setImgSrc] = useState(rawImg);
 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -32,8 +37,9 @@ export default function StudioCard({
       <div className="relative w-full h-52 overflow-hidden bg-neutral-100 dark:bg-neutral-800">
 
         <img
-          src={studio.primaryImage || studio.images?.[0] || "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=800"}
+          src={imgSrc}
           alt={studio.title}
+          onError={() => setImgSrc(DEFAULT_STUDIO_IMG)}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
 

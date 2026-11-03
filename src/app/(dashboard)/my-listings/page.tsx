@@ -100,8 +100,11 @@ export default function MyListingsPage() {
                       <div className="w-12 h-12 rounded-lg bg-neutral-200 dark:bg-neutral-800 overflow-hidden shrink-0">
 
                         <img
-                          src={studio.primaryImage || studio.images?.[0] || studio.image || ""}
+                          src={studio.primaryImage || studio.images?.[0] || studio.image || "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=200"}
                           alt={studio.title}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=200";
+                          }}
                           className="w-full h-full object-cover"
                         />
                       </div>

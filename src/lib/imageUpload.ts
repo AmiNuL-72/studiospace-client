@@ -2,8 +2,8 @@ import axios from "axios";
 
 export async function uploadToImgBB(file: File): Promise<string> {
   const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
-  if (!apiKey) {
-    throw new Error("ImgBB API key is missing. Set NEXT_PUBLIC_IMGBB_API_KEY in .env.local");
+  if (!apiKey || apiKey === "your_imgbb_api_key_here") {
+    throw new Error("Please add your free ImgBB API key in .env.local (Get it at https://api.imgbb.com)");
   }
 
   const formData = new FormData();
